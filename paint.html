@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas POC with Shapes</title>
+    <style>
+      
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  #drawing-area {
+    border: 2px solid black;
+    margin: 1rem 0;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .canvas-container__tools {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 10px;
+  }
+
+  .tool {
+    cursor: pointer;
+    border: 1px solid black;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    margin: 0 0.5rem;
+    background-color: #dcdcdc;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-align: center;
+    user-select: none;
+  }
+
+  .tool:hover {
+    background-color: #808080;
+    color: white;
+  }
+
+  .tool.active {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  .color-palette {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .color {
+    width: 30px;
+    height: 30px;
+    border: 2px solid black;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .color:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  @media screen and (max-width: 768px) {
+    #drawing-area {
+      width: 90%;
+      height: auto;
+    }
+
+    .tool {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.9rem;
+    }
+  }
+
+
+     
+    </style>
+  </head>
+  <body>
+    <div class="canvas-container">
+      <canvas id="drawing-area" height="500" width="500"></canvas>
+      <div class="canvas-container__tools">
+        <div class="tool pencil" onclick="selectPen()">Pencil</div>
+        <div class="tool eraser" onclick="toggleEraser()">Eraser</div>
+        <div class="tool clear" onclick="clearCanvas()">Clear</div>
+        <div class="tool rectangle" onclick="selectShape('rectangle')">Rectangle</div>
+        <div class="tool circle" onclick="selectShape('circle')">Circle</div>
+        <div class="tool line" onclick="selectShape('line')">Line</div>
+        <div class="tool fill" onclick="toggleFill()">Toggle Fill</div>
+        <div class="tool zoom-in" onclick="zoomCanvas(1.2)">Zoom In</div>
+        <div class="tool zoom-out" onclick="zoomCanvas(0.8)">Zoom Out</div>
+        <div class="tool save" onclick="saveCanvas()">Save</div>
+      </div>
+      <div class="color-palette">
+        <div class="color" style="background-color: black;" onclick="selectColor('black')"></div>
+        <div class="color" style="background-color: red;" onclick="selectColor('red')"></div>
+        <div class="color" style="background-color: rgb(238, 57, 159);" onclick="selectColor('pink')"></div>
+        <div class="color" style="background-color: rgb(198, 50, 171);" onclick="selectColor('purple')"></div>
+        <div class="color" style="background-color: rgb(41, 187, 219);" onclick="selectColor('skyblue')"></div>
+        <div class="color" style="background-color: blue;" onclick="selectColor('blue')"></div>
+        <div class="color" style="background-color: green;" onclick="selectColor('green')"></div>
+        <div class="color" style="background-color: yellow;" onclick="selectColor('yellow')"></div>
+        <div class="color" style="background-color: orange;" onclick="selectColor('orange')"></div>
+        <div class="color" style="background-color: brown;" onclick="selectColor('brown')"></div>
+        <div class="color" style="background-color: gray;" onclick="selectColor('gray')"></div>
+        <div class="color" style="background-color: cyan;" onclick="selectColor('cyan')"></div>
+        <div class="color" style="background-color: lime;" onclick="selectColor('lime')"></div>
+        <div class="color" style="background-color: gold;" onclick="selectColor('gold')"></div>
+        <div class="color" style="background-color: violet;" onclick="selectColor('violet')"></div>
+        <div class="color" style="background-color: navy;" onclick="selectColor('navy')"></div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("drawing-area");
+      const ctx = canvas.getContext("2d");
+
+      let drawing = false;
+      let eraser = false;
+      let currentShape = null;
+      let currentColor = "black";
+      let fillShapes = false;
+      let startX, startY;
+      let zoomLevel = 1;
+
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+
+      const selectPen = () => {
+        eraser = false;
+        currentShape = null;
+      };
+
+      const toggleEraser = () => {
+        eraser = true;
+        currentShape = null;
+      };
+
+      const clearCanvas = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        eraser = false;
+      };
+
+      const selectColor = (color) => {
+        currentColor = color;
+        eraser = false;
+      };
+
+      const toggleFill = () => {
+        fillShapes = !fillShapes;
+      };
+
+      const selectShape = (shape) => {
+        currentShape = shape;
+        eraser = false;
+      };
+
+      const zoomCanvas = (scale) => {
+        zoomLevel *= scale;
+        canvas.style.transform = `scale(${zoomLevel})`;
+      };
+
+      const saveCanvas = () => {
+        const link = document.createElement("a");
+        link.download = "canvas-drawing.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      };
+
+      const drawRectangle = (x, y, width, height) => {
+        ctx.strokeStyle = currentColor;
+        ctx.fillStyle = currentColor;
+        if (fillShapes) {
+          ctx.fillRect(x, y, width, height);
+        } else {
+          ctx.strokeRect(x, y, width, height);
+        }
+      };
+
+      const drawCircle = (x, y, radius) => {
+        ctx.strokeStyle = currentColor;
+        ctx.fillStyle = currentColor;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        if (fillShapes) {
+          ctx.fill();
+        } else {
+          ctx.stroke();
+        }
+      };
+
+      const drawLine = (x1, y1, x2, y2) => {
+        ctx.strokeStyle = currentColor;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      };
+
+      canvas.addEventListener("mousedown", (e) => {
+        startX = e.offsetX;
+        startY = e.offsetY;
+        drawing = true;
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!drawing || eraser || currentShape) return;
+
+        const currentX = e.offsetX;
+        const currentY = e.offsetY;
+
+        ctx.strokeStyle = currentColor;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+
+        startX = currentX;
+        startY = currentY;
+      });
+
+      canvas.addEventListener("mouseup", (e) => {
+        if (!drawing) return;
+
+        const currentX = e.offsetX;
+        const currentY = e.offsetY;
+        const width = currentX - startX;
+        const height = currentY - startY;
+
+        if (eraser) {
+          ctx.clearRect(currentX - 10, currentY - 10, 20, 20);
+        } else if (currentShape === "rectangle") {
+          drawRectangle(startX, startY, width, height);
+        } else if (currentShape === "circle") {
+          const radius = Math.sqrt(width ** 2 + height ** 2);
+          drawCircle(startX, startY, radius);
+        } else if (currentShape === "line") {
+          drawLine(startX, startY, currentX, currentY);
+        }
+
+        drawing = false;
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        drawing = false;
+      });
+    </script>
+  </body>
+</html>
+
+
+
